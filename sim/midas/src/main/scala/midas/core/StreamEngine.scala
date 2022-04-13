@@ -26,6 +26,7 @@ case object StreamEngineInstantiatorKey extends Field[(StreamEngineParameters, P
   */
 trait StreamParameters {
   def name: String
+  def idx: Int
   def fpgaBufferDepth: Int
   /**
     * Pretty prints a description of this stream.
@@ -34,8 +35,8 @@ trait StreamParameters {
     s"${name}, FPGA Buffer Depth: ${fpgaBufferDepth} Beats"
 }
 
-case class StreamSourceParameters(name: String, fpgaBufferDepth: Int) extends StreamParameters
-case class StreamSinkParameters(name: String, fpgaBufferDepth: Int) extends StreamParameters
+case class StreamSourceParameters(name: String, idx: Int, fpgaBufferDepth: Int) extends StreamParameters
+case class StreamSinkParameters  (name: String, idx: Int, fpgaBufferDepth: Int) extends StreamParameters
 
 /**
   * A wrapper class for common arguments to all StreamEngine implementations.

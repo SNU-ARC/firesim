@@ -43,14 +43,14 @@ protected:
     return sim->read(addr);
   }
 
-  ssize_t pull(size_t addr, char *data, size_t size) {
-    return sim->pull(addr, data, size);
+  ssize_t pull(unsigned stream_idx, char *data, size_t size, size_t minimum_batch_size) {
+    return sim->pull(stream_idx, data, size, minimum_batch_size);
   }
 
-  ssize_t push(size_t addr, char *data, size_t size) {
+  ssize_t push(unsigned stream_idx, char *data, size_t size, size_t minimum_batch_size) {
     if (size == 0)
       return 0;
-    return sim->push(addr, data, size);
+    return sim->push(stream_idx, data, size, minimum_batch_size);
   }
 
 private:

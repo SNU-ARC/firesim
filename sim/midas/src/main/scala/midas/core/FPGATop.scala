@@ -12,6 +12,7 @@ import freechips.rocketchip.config.{Parameters, Field}
 import freechips.rocketchip.diplomacy._
 import freechips.rocketchip.util.{DecoupledHelper, HeterogeneousBag}
 
+import scala.collection.immutable.ListMap
 import scala.collection.mutable
 
 /**
@@ -76,7 +77,8 @@ class FPGATop(implicit p: Parameters) extends LazyModule with UnpackedWrapperCon
     "Simulation control bus must be 32-bits wide per AXI4-lite specification")
   lazy val config = p(SimWrapperKey)
   val master = addWidget(new SimulationMaster)
-  val bridgeModuleMap: Map[BridgeIOAnnotation, BridgeModule[_ <: Record with HasChannels]] = bridgeAnnos.map(anno => anno -> addWidget(anno.elaborateWidget)).toMap
+  val bridgeModuleMap: ListMap[BridgeIOAnnotation, BridgeModule[_ <: Record with HasChannels]] = 
+    ListMap((bridgeAnnos.map(anno => anno -> addWidget(anno.elaborateWidget))):_*)
 
   // Find all bridges that wish to be allocated FPGA DRAM, and group them
   // according to their memoryRegionName. Requested addresses will be unified
@@ -289,20 +291,25 @@ class FPGATopImp(outer: FPGATop)(implicit p: Parameters) extends LazyModuleImp(o
     bridgeMod.module.hPort.connectChannels2Port(bridgeAnno, simIo)
   })
 
-  outer.streamingEngine.streamsToHostCPU.zip(outer.bridgesWithToHostCPUStreams)
-    .foreach { case (sink, src) =>
-      sink <> src.streamEnq
-    }
+  outer.printStreamSummary(outer.toCPUStreamParams,   "Bridge Streams To CPU:")
+  outer.printStreamSummary(outer.fromCPUStreamParams, "Bridge Streams From CPU:")
 
-  outer.bridgesWithFromHostCPUStreams.zip(outer.streamingEngine.streamsFromHostCPU)
-    .foreach { case (sink, src) =>
-      sink.streamDeq <> src
-    }
+  for (((sink, src), idx) <- outer.streamingEngine.streamsToHostCPU.zip(outer.bridgesWithToHostCPUStreams).zipWithIndex) {
+    val allocatedIdx = src.toHostStreamIdx
+    require(allocatedIdx == idx, 
+      s"Allocated to-host stream index ${allocatedIdx} does not match stream vector index ${idx}.")
+    sink <> src.streamEnq
+  }
+
+  for (((sink, src), idx) <- outer.bridgesWithFromHostCPUStreams.zip(outer.streamingEngine.streamsFromHostCPU).zipWithIndex) {
+    val allocatedIdx = sink.fromHostStreamIdx
+    require(allocatedIdx == idx, 
+      s"Allocated from-host stream index ${allocatedIdx} does not match stream vector index ${idx}.")
+    sink.streamDeq <> src
+  }
 
   outer.genCtrlIO(ctrl)
   outer.printMemoryMapSummary()
-  outer.printStreamSummary(outer.toCPUStreamParams,   "Bridge Streams To CPU:")
-  outer.printStreamSummary(outer.fromCPUStreamParams, "Bridge Streams From CPU:")
   outer.printHostDRAMSummary()
   outer.emitDefaultPlusArgsFile()
 
