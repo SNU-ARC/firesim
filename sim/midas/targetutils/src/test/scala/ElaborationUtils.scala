@@ -8,7 +8,7 @@ import chisel3.stage.ChiselStage
 import org.scalatest.flatspec.AnyFlatSpec
 
 trait ElaborationUtils { self: AnyFlatSpec =>
-  def elaborate(mod: =>Module): Unit = ChiselStage.emitFirrtl(mod)
+  def elaborate(mod: =>Module): (firrtl.ir.Circuit, firrtl.AnnotationSeq) = ElaborateChiselSubCircuit(mod)
 
   class AnnotateChiselTypeModule[T <: Data](gen: =>T, annotator: T => Unit) extends Module {
     val io = IO(new Bundle {
