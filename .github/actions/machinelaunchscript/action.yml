@@ -8,5 +8,8 @@ runs:
         sudo yum -y remove git git224 git224-core ius-release.noarch # remove any older git versions and collateral first
         cd scripts/ && /usr/bin/bash machine-launch-script.sh
         source /etc/profile.d/conda.sh
-        env >> $GITHUB_ENV # persist the machine-launch-script env changes to other actions
+        # persist the machine-launch-script env changes to other actions
+        # reject any redacted secrets by filtering out lines with ***, this
+        # will produce a malformed env otherwise.
+        env | grep -v "\*\*\*" >> $GITHUB_ENV
       shell: bash
