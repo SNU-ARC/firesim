@@ -4,5 +4,8 @@ description: "Run firesim's build-setup.sh"
 runs:
   using: "composite"
   steps:
-    - run: ./build-setup.sh fast --skip-validate
+    - run: |
+        source /etc/profile.d/conda.sh
+        ./build-setup.sh fast --skip-validate
+        echo "source /etc/profile.d/conda.sh" >> env.sh
       shell: bash
